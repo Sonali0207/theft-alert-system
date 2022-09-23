@@ -1,0 +1,35 @@
+from boltiot import Sms, Bolt
+import details, json, time
+
+lower_limit = 10
+upper_limit = 50
+
+mybolt = Bolt(details.API_KEY, details.DEVICE_ID)
+sms = Sms(details.SID, details.AUTH_TOKEN, details.TO_NUMBER, details.FROM_NUMBER)
+
+def light_intensity(pin):
+        try:
+                input =  mybolt.analogRead(pin)
+                data = json.loads(input)
+                if data["success"] != 1:
+                        print("Request not successful")
+                        print("Response is ", data)
+                        return -999
+                value_of_intensity = int(data["value"])
+                return value_of_intensity
+        except Exception as e:
+                print("Something went wrong when returning the sensor value")
+                print(e)
+                return -999
+while True:
+        value_of_intensity = light_intensity("A0")
+        print("The current light intensity is:", value_of_intensity)
+        try:
+                if value_of_intensity > lower_limit and value_of_intensity < upper_limit:
+                        print("Sending an SMS via twilio")
+                        input = sms.send_sms("ALERT: There’s an intruder in the house")
+                        print("Response received from twilio is:" +str(input.status))
+        except Exception as e:
+                print("An error has occurred: Details are given below")
+                print(e)
+        time.sleep(20)
